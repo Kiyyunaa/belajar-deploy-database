@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const body = await request.json();
-    const { name, description, price } = body;
+    const { name, description, price, category } = body;
 
     if (!name || price === undefined || price === '') {
       return NextResponse.json(
@@ -33,17 +33,30 @@ export async function PUT(request, { params }) {
       );
     }
 
+    if (!category || !category.trim()) {
+      return NextResponse.json(
+        { error: 'Field "category" wajib diisi' },
+        { status: 400 }
+      );
+    }
+
     const pool = getPool();
     const [result] = await pool.query(
-      'UPDATE products SET name = ?, description = ?, price = ? WHERE id = ?',
-      [name, description || null, price, params.id]
+      'UPDATE products SET name = ?, description = ?, price = ?, category = ? WHERE id = ?',
+      [name, description || null, price, category.trim(), params.id]
     );
 
     if (result.affectedRows === 0) {
       return NextResponse.json({ error: 'Produk tidak ditemukan' }, { status: 404 });
     }
 
-    return NextResponse.json({ id: Number(params.id), name, description, price });
+    return NextResponse.json({
+      id: Number(params.id),
+      name,
+      description,
+      price,
+      category: category.trim(),
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error.message }, { status: 500 });
